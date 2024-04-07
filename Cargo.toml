@@ -3,6 +3,8 @@ name = "sandblast"
 version = "0.1.0"
 edition = "2021"
 license = "GNU GPL 3"
+description = "A Rust library that smooths out the rough edges of compute shader development with wgpu."
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
