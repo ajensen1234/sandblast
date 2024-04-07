@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "A Rust library that smooths out the rough edges of compute shader development with wgpu."
-
+repository = "https://github.com/ajensen1234/sandblast"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
