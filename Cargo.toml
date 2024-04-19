@@ -7,10 +7,10 @@ description = "A Rust library that smooths out the rough edges of compute shader
 repository = "https://github.com/ajensen1234/sandblast"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-name = "sandblast"
-path = "src/lib.rs"
-
 [dependencies]
 bytemuck = "1.15.0"
 wgpu = "0.19.4"
+
+[lib]
+name = "sandblast"
+path = "src/lib.rs"

@@ -1,6 +1,6 @@
 use bytemuck;
 use std::marker::PhantomData;
-use wgpu::{self, util::DeviceExt, BufferUsages};
+use wgpu::{self, util::DeviceExt};
 
 pub struct GpuBuffer<T> {
     buffer: wgpu::Buffer,
