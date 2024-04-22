@@ -8,8 +8,10 @@ repository = "https://github.com/ajensen1234/sandblast"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytemuck = "1.15.0"
+bytemuck = {version= "1.15.0", features= ["derive"]}
 wgpu = "0.19.4"
+pollster = "0.2.5"
+nalgebra = {version = "0.32.4", features = ["rand"]}
 
 [lib]
 name = "sandblast"

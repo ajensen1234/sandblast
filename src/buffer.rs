@@ -1,9 +1,10 @@
 use bytemuck;
 use std::marker::PhantomData;
 use wgpu::{self, util::DeviceExt};
+use crate::device::GpuDevice;
 
 pub struct GpuBuffer<T> {
-    buffer: wgpu::Buffer,
+    pub buffer: wgpu::Buffer,
     size: usize,
     _marker: PhantomData<T>,
 }
@@ -19,8 +20,8 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable> GpuBuffer<T> {
     /// that are 'plain old data' (bytemuck::Pod)
     ///
     /// This will abstract away all the necesity to create different bind groups, as well as abstracting away the need for the different types of data that you want to shove onto a GPU
-    pub fn new(device: &wgpu::Device, data: &[T]) -> Self {
-        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    pub fn new(device: &GpuDevice, data: &[T]) -> Self {
+        let buffer = device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(data),
             usage: wgpu::BufferUsages::COPY_SRC
@@ -30,8 +31,8 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable> GpuBuffer<T> {
                 | wgpu::BufferUsages::UNIFORM
                 | wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::INDIRECT
-                | wgpu::BufferUsages::MAP_READ
-                | wgpu::BufferUsages::MAP_WRITE,
+                // | wgpu::BufferUsages::MAP_READ
+                // | wgpu::BufferUsages::MAP_WRITE,
         });
         return Self {
             buffer,
