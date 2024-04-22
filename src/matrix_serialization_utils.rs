@@ -1,6 +1,5 @@
 use bytemuck::{Pod, cast_slice};
 use nalgebra::DMatrix;
-// use crate::gpu_matrix::GPUMatrix;
 
 pub fn matrix_to_casted_array<U, T>(matrix: &DMatrix<U>) -> &[T]
 where
