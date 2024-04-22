@@ -14,8 +14,11 @@
 //
 // Also licensed under MIT license, at your choice.
 
-struct DataBuf {
+struct GPUMatrix {
     data: array<f32>,
+    num_rows: u32,
+    num_cols: u32,
+    to_tranpose: u32
 }
 
 @group(0)
@@ -42,20 +45,58 @@ var<storage, read_write> num_cols_matrix_0: u32;
 @binding(5)
 var<storage, read_write> num_cols_matrix_1: u32;
 
+@group(0)
+@binding(6)
+var<storage, read_write> to_transpose_matrix_0: u32;
+
+@group(0)
+@binding(7)
+var<storage, read_write> to_transpose_matrix_1: u32;
+
+
+
 @compute
 @workgroup_size(16, 16, 1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
-    let output_row = global_id.x % num_rows;
-    let output_col = global_id.x / num_rows;
+    var num_rows_matrix_0_after_tranpose: i32;
+    // if (to_transpose_matrix_0 == 1) {
+    //    let num_rows_matrix_0_after_tranpose = num_cols_matrix_0;
+    //} else {
+    //    let num_rows_matrix_0_after_tranpose = num_rows_matrix_0;
+    //};
 
-    let new_val: f32 = 0;
-    let current_matrix_0_col: u32 = 0;
+    //let output_row = global_id.x % num_rows_matrix_0_after_tranpose;
+    //let output_col = global_id.x / num_rows_matrix_0_after_tranpose;
 
-    while (current_matrix_0_col < num_cols_matrix_0) {
+    //let new_val: i32 = 0;
+    //let current_matrix_0_col: i32 = 0;
+
+    //var matrix_0_col_boundary: i32;
+    //if (to_transpose_matrix_0 == 1) {
+    //    let matrix_0_col_boundary = num_rows_matrix_0;
+    //} else {
+    //    let matrix_0_col_boundary = num_cols_matrix_0;
+    //};
+
+    //while (current_matrix_0_col < matrix_0_col_boundary) {
         // Adds product of elements at (output_row, current_matrix_0_col) and (current_matrix_0_col, output_col) to new_val
-        new_val += matrix_0[current_matrix_0_col * num_rows_matrix_0 + output_row] * matrix_1[output_col * num_cols_matrix_0 + current_matrix_0_col]
-        current_matrix_0_col += 1;
-    }
+        //var matrix_0_row_elem_idx: i32;
+        //var matrix_1_col_elem_idx: i32;
+        //if (to_transpose_matrix_0 == 1) {
+            //let matrix_0_row_elem_idx = output_row * num_cols_matrix_0 + current_matrix_0_col;
+        //} else {
+            //let matrix_0_row_elem_idx = current_matrix_0_col * num_rows_matrix_0 + output_row;
+        //};
 
-    output_matrix[global_id.x] = new_val;
+        //if (to_transpose_matrix_1 == 1) {
+            //let matrix_1_col_elem_idx = output_col * num_cols_matrix_1 + current_matrix_0_col;
+        //} else {
+            //let matrix_1_col_elem_idx = current_matrix_0_col * num_cols_matrix_0 + output_col;
+        //};
+
+        //new_val += matrix_0[matrix_0_row_elem_idx] * matrix_1[matrix_1_col_elem_idx];
+        //current_matrix_0_col += 1;
+    //}
+
+    //output_matrix[global_id.x] = new_val;
 }
