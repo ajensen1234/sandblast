@@ -16,3 +16,4 @@ nalgebra = {version = "0.32.4", features = ["rand"]}
 [lib]
 name = "sandblast"
 path = "src/lib.rs"
+

@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct GpuDevice {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
