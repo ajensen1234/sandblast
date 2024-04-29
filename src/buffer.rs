@@ -20,19 +20,35 @@ impl<T: bytemuck::Pod + bytemuck::Zeroable> GpuBuffer<T> {
     /// that are 'plain old data' (bytemuck::Pod)
     ///
     /// This will abstract away all the necesity to create different bind groups, as well as abstracting away the need for the different types of data that you want to shove onto a GPU
-    pub fn new(device: &GpuDevice, data: &[T]) -> Self {
+    pub fn new(device: &GpuDevice, data: &[T], small_and_read_only: bool, output: bool) -> Self {
+        let buffer_usage = if output {
+            wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::MAP_READ
+        } else if small_and_read_only {
+            wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::VERTEX
+                    | wgpu::BufferUsages::INDEX
+                    | wgpu::BufferUsages::UNIFORM
+                    | wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::INDIRECT
+                    // | wgpu::BufferUsages::MAP_READ
+                    // | wgpu::BufferUsages::MAP_WRITE,
+        } else {
+            wgpu::BufferUsages::COPY_SRC
+                    | wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::VERTEX
+                    | wgpu::BufferUsages::INDEX
+                    | wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::INDIRECT
+                    // | wgpu::BufferUsages::MAP_READ
+                    // | wgpu::BufferUsages::MAP_WRITE,
+        };
+        
         let buffer = device.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(data),
-            usage: wgpu::BufferUsages::COPY_SRC
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::VERTEX
-                | wgpu::BufferUsages::INDEX
-                | wgpu::BufferUsages::UNIFORM
-                | wgpu::BufferUsages::STORAGE
-                | wgpu::BufferUsages::INDIRECT
-                // | wgpu::BufferUsages::MAP_READ
-                // | wgpu::BufferUsages::MAP_WRITE,
+            usage: buffer_usage
         });
         return Self {
             buffer,

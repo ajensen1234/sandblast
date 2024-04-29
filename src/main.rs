@@ -8,19 +8,19 @@ use bytemuck::cast_slice;
 
 
 fn main() {
-    let device = pollster::block_on(GpuDevice::new());
+    // let device = pollster::block_on(GpuDevice::new());
 
     // Example element-wise multiplication and division sequence
-    let num_rows: usize = 25;
-    let num_cols: usize = 25;
+    // let num_rows: usize = 25;
+    // let num_cols: usize = 25;
 
-    let matrix_base = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()));
-    let matrix_to_multiply = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()));
-    let matrix_to_divide = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()));
+    // let matrix_base = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()), false);
+    // let matrix_to_multiply = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()), false);
+    // let matrix_to_divide = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()), false);
 
-    let shader = ComputeShader::<u8>::new(device, "src/element_mul_div.wgsl");
+    // let shader = ComputeShader::<u8>::new(device, "src/element_mul_div.wgsl");
 
-    pollster::block_on(shader.run(&[matrix_base, matrix_to_multiply, matrix_to_divide], (num_rows as u32, num_cols as u32, 1)));
+    // pollster::block_on(shader.run(&[matrix_base, matrix_to_multiply, matrix_to_divide], (num_rows as u32, num_cols as u32, 1)));
 
     // let a = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()));
     // let b = GpuBuffer::<u8>::new(&device, matrix_to_casted_array(&DMatrix::<f32>::new_random(num_rows, num_cols).abs()));

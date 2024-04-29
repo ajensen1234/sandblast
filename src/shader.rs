@@ -4,6 +4,8 @@ use std::io::Read;
 use std::marker::PhantomData;
 use crate::buffer::GpuBuffer;
 use crate::device::GpuDevice;
+use crate::binding_info::generate_binding_info_from_wgsl;
+use nalgebra::DMatrix;
 
 //TODO: Figure out which things actually need to live in the compute shader vs the things that just need to live as implementations
 // This might just need to be a function instead of a struct
@@ -40,18 +42,21 @@ impl<T> ComputeShader<T>{
         let param_matches: Vec<_> = wgsl_code.match_indices("@binding").collect();
         let num_params = param_matches.len();
 
+        let binding_info = generate_binding_info_from_wgsl(&wgsl_code);
+
         // Create a bindgroup layout in accordance with those parameters
-        let entries_vec: Vec<wgpu::BindGroupLayoutEntry> = (0..num_params).map(|idx| wgpu::BindGroupLayoutEntry {
-                binding: idx as u32,
+        let entries_vec: Vec<wgpu::BindGroupLayoutEntry> = binding_info.iter().map(|info| wgpu::BindGroupLayoutEntry {
+                binding: info.binding as u32,
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage { read_only: false },
+                    ty: if &*info.buffer_type == "storage" {wgpu::BufferBindingType::Storage { read_only: info.read_only }} else {wgpu::BufferBindingType::Uniform},
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
                 count: None,
         }).collect();
         let entries_slice = entries_vec.as_slice();
+        println!("{}", entries_vec.len());
         
         let bind_group_layout = device.device.create_bind_group_layout(&&wgpu::BindGroupLayoutDescriptor {
             label: None,
@@ -79,7 +84,8 @@ impl<T> ComputeShader<T>{
         }
     }
 
-    pub async fn run(&self, buffers: &[GpuBuffer<T>], dispatch_groups: (u32, u32, u32)) {
+    pub async fn run(&self, buffers: &[GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: &GpuBuffer<T>) -> Vec<f32> {
+        println!("Here");
         let entries_vec: Vec<wgpu::BindGroupEntry> = (0..buffers.len()).map(|idx| wgpu::BindGroupEntry {
             binding: idx as u32,
             resource: buffers[idx].buffer.as_entire_binding(),
@@ -103,6 +109,23 @@ impl<T> ComputeShader<T>{
             cpass.dispatch_workgroups(x, y, z);
         }
 
+        encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+
         self.device.queue.submit(Some(encoder.finish()));
+
+        let buf_slice = output_buffer.buffer.slice(..);
+        let (sender, receiver) = futures_intrusive::channel::shared::oneshot_channel();
+        buf_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
+        println!("pre-poll {:?}", std::time::Instant::now());
+        self.device.device.poll(wgpu::Maintain::Wait);
+        println!("post-poll {:?}", std::time::Instant::now());
+        if let Some(Ok(())) = receiver.receive().await {
+            let data_raw = &*buf_slice.get_mapped_range();
+            let data: &[f32] = bytemuck::cast_slice(data_raw);
+            return (&*data).to_vec()
+        }
+
+        return [].to_vec();
+
     }
 }
