@@ -4,22 +4,22 @@ use std::io::Read;
 use std::marker::PhantomData;
 use crate::buffer::GpuBuffer;
 use crate::device::GpuDevice;
-use crate::binding_info::generate_binding_info_from_wgsl;
+use crate::binding_info::stubbed_generate_binding_info_from_wgsl;
 use nalgebra::DMatrix;
 
 //TODO: Figure out which things actually need to live in the compute shader vs the things that just need to live as implementations
 // This might just need to be a function instead of a struct
 // TODO: Remove unwraps and eventually return error codes based on waht we are expecting to pass through
-pub struct ComputeShader<T> {
+pub struct ComputeShader<'a, T> {
     wgsl_code: String,
-    device: GpuDevice,
+    device: &'a GpuDevice,
     bind_group_layout: wgpu::BindGroupLayout,
     compute_pipeline: wgpu::ComputePipeline,
     _marker: PhantomData<T>
 }
 
 
-impl<T> ComputeShader<T>{
+impl<'a, T> ComputeShader<'a, T>{
     /// This is the code that will house all of the necessary functions to
     /// run a compute shader without any of the necessary boilerplate.
     ///
@@ -27,7 +27,7 @@ impl<T> ComputeShader<T>{
     /// into the protocol, and everything boilerplate will be abstracted away.
     /// Voila
 
-    pub fn new(device: GpuDevice, wgsl_file: &str) -> Self {
+    pub fn new(device: &'a GpuDevice, wgsl_file: &str) -> Self {
         let mut file = File::open(wgsl_file).unwrap();
         let mut wgsl_code = String::new();
         file.read_to_string(&mut wgsl_code).unwrap();
@@ -42,7 +42,7 @@ impl<T> ComputeShader<T>{
         let param_matches: Vec<_> = wgsl_code.match_indices("@binding").collect();
         let num_params = param_matches.len();
 
-        let binding_info = generate_binding_info_from_wgsl(&wgsl_code);
+        let binding_info = stubbed_generate_binding_info_from_wgsl(&wgsl_file, &wgsl_code);
 
         // Create a bindgroup layout in accordance with those parameters
         let entries_vec: Vec<wgpu::BindGroupLayoutEntry> = binding_info.iter().map(|info| wgpu::BindGroupLayoutEntry {
@@ -84,8 +84,7 @@ impl<T> ComputeShader<T>{
         }
     }
 
-    pub async fn run(&self, buffers: &[GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: &GpuBuffer<T>) -> Vec<f32> {
-        println!("Here");
+    pub async fn run(&self, buffers: &[&GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: &GpuBuffer<T>) -> Vec<f32> {
         let entries_vec: Vec<wgpu::BindGroupEntry> = (0..buffers.len()).map(|idx| wgpu::BindGroupEntry {
             binding: idx as u32,
             resource: buffers[idx].buffer.as_entire_binding(),
@@ -109,7 +108,14 @@ impl<T> ComputeShader<T>{
             cpass.dispatch_workgroups(x, y, z);
         }
 
-        encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+        // TODO: Replace this hardcode
+        if buffers.len() == 7 {
+            encoder.copy_buffer_to_buffer(&(buffers[3].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+        } else if buffers.len() == 5 {
+            encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+        } else if buffers.len() == 3 {
+            encoder.copy_buffer_to_buffer(&(buffers[0].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+        }
 
         self.device.queue.submit(Some(encoder.finish()));
 
