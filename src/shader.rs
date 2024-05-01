@@ -84,7 +84,7 @@ impl<'a, T> ComputeShader<'a, T>{
         }
     }
 
-    pub async fn run(&self, buffers: &[&GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: &GpuBuffer<T>) -> Vec<f32> {
+    pub async fn run(&self, buffers: &[&GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: Option<&GpuBuffer<T>>) -> Vec<f32> {
         let entries_vec: Vec<wgpu::BindGroupEntry> = (0..buffers.len()).map(|idx| wgpu::BindGroupEntry {
             binding: idx as u32,
             resource: buffers[idx].buffer.as_entire_binding(),
@@ -109,29 +109,39 @@ impl<'a, T> ComputeShader<'a, T>{
         }
 
         // TODO: Replace this hardcode
-        if buffers.len() == 7 {
-            encoder.copy_buffer_to_buffer(&(buffers[3].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
-        } else if buffers.len() == 5 {
-            encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
-        } else if buffers.len() == 3 {
-            encoder.copy_buffer_to_buffer(&(buffers[0].buffer), 0, &(output_buffer.buffer), 0, output_buffer.buffer.size());
+        match output_buffer {
+            Some(x) => {if buffers.len() == 7 {
+                encoder.copy_buffer_to_buffer(&(buffers[3].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
+            } else if buffers.len() == 5 {
+                encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
+            } else if buffers.len() == 3 {
+                encoder.copy_buffer_to_buffer(&(buffers[0].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
+            }}
+            None => {}
         }
 
         self.device.queue.submit(Some(encoder.finish()));
 
-        let buf_slice = output_buffer.buffer.slice(..);
-        let (sender, receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        buf_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
-        println!("pre-poll {:?}", std::time::Instant::now());
-        self.device.device.poll(wgpu::Maintain::Wait);
-        println!("post-poll {:?}", std::time::Instant::now());
-        if let Some(Ok(())) = receiver.receive().await {
-            let data_raw = &*buf_slice.get_mapped_range();
-            let data: &[f32] = bytemuck::cast_slice(data_raw);
-            return (&*data).to_vec()
+        match output_buffer {
+            Some(x) => {
+            let buf_slice = output_buffer.unwrap().buffer.slice(..);
+            let (sender, receiver) = futures_intrusive::channel::shared::oneshot_channel();
+            buf_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
+            println!("pre-poll {:?}", std::time::Instant::now());
+            self.device.device.poll(wgpu::Maintain::Wait);
+            println!("post-poll {:?}", std::time::Instant::now());
+            if let Some(Ok(())) = receiver.receive().await {
+                let data_raw = &*buf_slice.get_mapped_range();
+                let data: &[f32] = bytemuck::cast_slice(data_raw);
+                return (&*data).to_vec()
+            }
+        }
+            None => {}
+
         }
 
         return [].to_vec();
+
 
     }
 }
