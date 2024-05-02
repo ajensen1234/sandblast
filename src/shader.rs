@@ -84,7 +84,7 @@ impl<'a, T> ComputeShader<'a, T>{
         }
     }
 
-    pub async fn run(&self, buffers: &[&GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: Option<&GpuBuffer<T>>) -> Vec<f32> {
+    pub async fn run(&self, bind_group: &wgpu::BindGroup, buffers: &[&GpuBuffer<T>], dispatch_groups: (u32, u32, u32), output_buffer: Option<&GpuBuffer<T>>) -> Vec<f32> {
         let entries_vec: Vec<wgpu::BindGroupEntry> = (0..buffers.len()).map(|idx| wgpu::BindGroupEntry {
             binding: idx as u32,
             resource: buffers[idx].buffer.as_entire_binding(),
@@ -143,5 +143,19 @@ impl<'a, T> ComputeShader<'a, T>{
         return [].to_vec();
 
 
+    }
+
+    pub fn bind_group_from_buffers(&self, buffers: &[&GpuBuffer<T>]) -> wgpu::BindGroup {
+        let entries_vec: Vec<wgpu::BindGroupEntry> = (0..buffers.len()).map(|idx| wgpu::BindGroupEntry {
+            binding: idx as u32,
+            resource: buffers[idx].buffer.as_entire_binding(),
+        }).collect();
+        let entries_slice = entries_vec.as_slice();
+
+        return self.device.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &self.bind_group_layout,
+            entries: &entries_slice
+        }); 
     }
 }
