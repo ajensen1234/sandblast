@@ -1,6 +1,7 @@
 use std::time::Instant;
 use std::fs:: File ;
 use std::io::Read;
+use std::cmp::min;
 use std::marker::PhantomData;
 use crate::buffer::GpuBuffer;
 use crate::device::GpuDevice;
@@ -111,11 +112,11 @@ impl<'a, T> ComputeShader<'a, T>{
         // TODO: Replace this hardcode
         match output_buffer {
             Some(x) => {if buffers.len() == 7 {
-                encoder.copy_buffer_to_buffer(&(buffers[3].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
+                encoder.copy_buffer_to_buffer(&(buffers[3].buffer), 0, &(output_buffer.unwrap().buffer), 0, min(output_buffer.unwrap().buffer.size(), buffers[3].buffer.size()));
             } else if buffers.len() == 5 {
-                encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
-            } else if buffers.len() == 3 {
-                encoder.copy_buffer_to_buffer(&(buffers[0].buffer), 0, &(output_buffer.unwrap().buffer), 0, output_buffer.unwrap().buffer.size());
+                encoder.copy_buffer_to_buffer(&(buffers[2].buffer), 0, &(output_buffer.unwrap().buffer), 0, min(output_buffer.unwrap().buffer.size(), buffers[2].buffer.size()));
+            } else if buffers.len() == 4 {
+                encoder.copy_buffer_to_buffer(&(buffers[0].buffer), 0, &(output_buffer.unwrap().buffer), 0, min(output_buffer.unwrap().buffer.size(), buffers[0].buffer.size()));
             }}
             None => {}
         }
@@ -133,6 +134,7 @@ impl<'a, T> ComputeShader<'a, T>{
             if let Some(Ok(())) = receiver.receive().await {
                 let data_raw = &*buf_slice.get_mapped_range();
                 let data: &[f32] = bytemuck::cast_slice(data_raw);
+                println!("Copy length {}", ((&*data).len()));
                 return (&*data).to_vec()
             }
         }
