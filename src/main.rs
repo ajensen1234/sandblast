@@ -1,11 +1,9 @@
+use bytemuck::cast_slice;
+use nalgebra::DMatrix;
 use sandblast::buffer::GpuBuffer;
 use sandblast::device::GpuDevice;
-use sandblast::shader::ComputeShader;
 use sandblast::matrix_serialization_utils::matrix_to_casted_array;
-use nalgebra::DMatrix;
-use bytemuck::cast_slice;
-
-
+use sandblast::shader::ComputeShader;
 
 fn main() {
     // let device = pollster::block_on(GpuDevice::new());
